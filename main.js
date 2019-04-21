@@ -20,39 +20,35 @@ inquirer.prompt(questions).then(answers => {
   main(url);
 });
 
-const main = url => {
-  rp(url)
-    .then(function(html) {
-      //success!
-      urls = getImageLinks(html);
+async function main(url) {
+  const html = await rp(url);
 
-      if (urls.length) {
-        // check if "images" directory exists
-        fs.access("./images", fs.constants.F_OK, error => {
-          if (error) {
-            // does not exist, so we create it
-            fs.mkdir("./images", error => {
-              if (error) throw error;
-              console.log("created dir");
-              urls.forEach(url => {
-                downloadPicture(url);
-              });
-            });
-          } else {
-            // already exists
-            urls.forEach(url => {
-              downloadPicture(url);
-            });
-          }
+  // get a list of links
+  urls = getImageLinks(html);
+
+  if (urls.length) {
+    // check if "images" directory exists
+    fs.access("./images", fs.constants.F_OK, error => {
+      if (error) {
+        // does not exist, so we create it
+        fs.mkdir("./images", error => {
+          if (error) throw error;
+          console.log("created dir");
+          urls.forEach(url => {
+            downloadPicture(url);
+          });
+        });
+      } else {
+        // already exists
+        urls.forEach(url => {
+          downloadPicture(url);
         });
       }
-    })
-    .catch(error => {
-      //handle error
-      console.error(error);
     });
-};
+  }
+}
 
+// get a list of links
 const getImageLinks = html => {
   const parsedHtml = $(".AdaptiveMedia-photoContainer > img", html);
   const urls = [];
@@ -68,23 +64,20 @@ const getImageLinks = html => {
   return urls;
 };
 
-const downloadPicture = url => {
+// download a picture from a link
+async function downloadPicture(url) {
   const options = {
     url,
     encoding: null,
   };
 
-  rp(options)
-    .then(img => {
-      // extract file name
-      const basename = path.basename(url);
-      // write the image
-      fs.writeFile(`images/${basename}`, img, error => {
-        if (error) throw error;
-        console.log(`Picture ${basename} saved!`);
-      });
-    })
-    .catch(error => {
-      console.error(error);
-    });
-};
+  const img = await rp(options);
+
+  // extract file name
+  const basename = path.basename(url);
+  // write the image
+  fs.writeFile(`images/${basename}`, img, error => {
+    if (error) throw error;
+    console.log(`Picture ${basename} saved!`);
+  });
+}
