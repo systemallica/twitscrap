@@ -4,6 +4,7 @@ const path = require("path");
 // scrapping
 const rp = require("request-promise");
 const $ = require("cheerio");
+const puppeteer = require("puppeteer");
 //others
 const inquirer = require("inquirer");
 
@@ -21,11 +22,46 @@ inquirer.prompt(questions).then(answers => {
 });
 
 async function main(url) {
-  const html = await rp(url);
+  const browser = await puppeteer.launch({
+    headless: false,
+  });
+  const page = await browser.newPage();
+  await page.goto(url);
+  await page.setViewport({
+    width: 1200,
+    height: 800,
+  });
 
+  await autoScroll(page);
+
+  await parseContent(await page.content());
+
+  await browser.close();
+}
+
+async function autoScroll(page) {
+  await page.evaluate(async () => {
+    await new Promise((resolve, reject) => {
+      var totalHeight = 0;
+      var distance = 100;
+      var timer = setInterval(() => {
+        var scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+
+        if (totalHeight >= scrollHeight) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 50);
+    });
+  });
+}
+
+async function parseContent(html) {
   // get a list of links
   urls = getImageLinks(html);
-
+  console.log(`Number of pictures: ${urls.length}`);
   if (urls.length) {
     // check if "images" directory exists
     fs.access("./images", fs.constants.F_OK, error => {
