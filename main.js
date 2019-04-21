@@ -7,6 +7,12 @@ const $ = require("cheerio");
 const puppeteer = require("puppeteer");
 //others
 const inquirer = require("inquirer");
+const cliProgress = require("cli-progress");
+
+// create a new progress bar instance and use shades_classic theme
+const bar1 = new cliProgress.Bar({}, cliProgress.Presets.shades_classic);
+
+let username = "";
 
 const questions = [
   {
@@ -17,7 +23,8 @@ const questions = [
 ];
 
 inquirer.prompt(questions).then(answers => {
-  const url = `https://twitter.com/${answers["username"]}/media`;
+  username = answers["username"];
+  const url = `https://twitter.com/${username}/media`;
   main(url);
 });
 
@@ -61,13 +68,17 @@ async function autoScroll(page) {
 async function parseContent(html) {
   // get a list of links
   urls = getImageLinks(html);
-  console.log(`Number of images: ${urls.length}`);
-  if (urls.length) {
+  urlsLength = urls.length;
+  console.log(`Number of images: ${urlsLength}`);
+  // start the progress bar with a total value of 200 and start value of 0
+  bar1.start(urlsLength, 0);
+
+  if (urlsLength) {
     // check if "images" directory exists
-    fs.access("./images", fs.constants.F_OK, error => {
+    fs.access(`./${username}`, fs.constants.F_OK, error => {
       if (error) {
         // does not exist, so we create it
-        fs.mkdir("./images", error => {
+        fs.mkdir(`./${username}`, error => {
           if (error) throw error;
           downloadPictures(urls);
         });
@@ -96,11 +107,13 @@ const getImageLinks = html => {
 };
 
 downloadPictures = urls => {
-  const length = urls.length;
   urls.forEach((url, i) => {
-    console.log(`Downloading ${i + 1}/${length}...`);
+    // update the current value in your application..
+    bar1.update(i + 1);
     downloadPicture(url);
   });
+  // stop the progress bar
+  bar1.stop();
   console.log("All done!");
 };
 
@@ -116,7 +129,7 @@ async function downloadPicture(url) {
   // extract file name
   const basename = path.basename(url);
   // write the image
-  fs.writeFile(`images/${basename}`, img, error => {
+  fs.writeFile(`${username}/${basename}`, img, error => {
     if (error) throw error;
   });
 }
