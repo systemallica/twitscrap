@@ -12,7 +12,8 @@ const cliProgress = require("cli-progress");
 // create a new progress bar instance and use shades_classic theme
 const bar1 = new cliProgress.Bar({}, cliProgress.Presets.shades_classic);
 
-let username = "";
+let username;
+let startTime;
 
 const questions = [
   {
@@ -42,14 +43,6 @@ async function main(url) {
   await parseContent(await page.content());
 
   await browser.close();
-
-  endTime = new Date();
-  let timeDiff = endTime - startTime; //in ms
-  // strip the ms
-  timeDiff /= 1000;
-  // get seconds
-  const seconds = Math.round(timeDiff);
-  console.log(`Elapsed time: ${seconds} seconds`);
 }
 
 // Automatically scroll the puppeteer instance until the end of the page
@@ -85,16 +78,16 @@ async function parseContent(html) {
 
   if (urlsLength) {
     // check if "images" directory exists
-    fs.access(`./${username}`, fs.constants.F_OK, error => {
+    fs.access(`./${username}`, fs.constants.F_OK, async error => {
       if (error) {
         // does not exist, so we create it
-        fs.mkdir(`./${username}`, error => {
+        fs.mkdir(`./${username}`, async error => {
           if (error) throw error;
-          downloadPictures(urls);
+          await downloadPictures(urls);
         });
       } else {
         // already exists
-        downloadPictures(urls);
+        await downloadPictures(urls);
       }
     });
   }
@@ -116,16 +109,24 @@ const getImageLinks = html => {
   return urls;
 };
 
-downloadPictures = urls => {
-  urls.forEach((url, i) => {
+async function downloadPictures(urls) {
+  for (let i = 0; i < urls.length; i++) {
     // update the current value in your application..
+    await downloadPicture(urls[i]);
     bar1.update(i + 1);
-    downloadPicture(url);
-  });
+  }
   // stop the progress bar
   bar1.stop();
   console.log("All done!");
-};
+
+  const endTime = new Date();
+  let timeDiff = endTime - startTime; //in ms
+  // strip the ms
+  timeDiff /= 1000;
+  // get seconds
+  const seconds = Math.round(timeDiff);
+  console.log(`Elapsed time: ${seconds} seconds`);
+}
 
 // download a picture from a link
 async function downloadPicture(url) {
