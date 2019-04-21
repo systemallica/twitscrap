@@ -30,6 +30,7 @@ inquirer.prompt(questions).then(answers => {
 
 async function main(url) {
   console.log("Fetching images...");
+  console.log("This may take a couple of minutes...");
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url);
@@ -69,7 +70,6 @@ async function parseContent(html) {
   // get a list of links
   urls = getImageLinks(html);
   urlsLength = urls.length;
-  console.log(`Number of images: ${urlsLength}`);
   // start the progress bar with a total value of 200 and start value of 0
   bar1.start(urlsLength, 0);
 
