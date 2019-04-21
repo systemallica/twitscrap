@@ -35,11 +35,21 @@ async function main(url) {
   const page = await browser.newPage();
   await page.goto(url);
 
+  startTime = new Date();
+
   await autoScroll(page);
 
   await parseContent(await page.content());
 
   await browser.close();
+
+  endTime = new Date();
+  let timeDiff = endTime - startTime; //in ms
+  // strip the ms
+  timeDiff /= 1000;
+  // get seconds
+  const seconds = Math.round(timeDiff);
+  console.log(`Elapsed time: ${seconds} seconds`);
 }
 
 // Automatically scroll the puppeteer instance until the end of the page
