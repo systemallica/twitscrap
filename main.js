@@ -22,15 +22,10 @@ inquirer.prompt(questions).then(answers => {
 });
 
 async function main(url) {
-  const browser = await puppeteer.launch({
-    headless: false,
-  });
+  console.log("Fetching images...");
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url);
-  await page.setViewport({
-    width: 1200,
-    height: 800,
-  });
 
   await autoScroll(page);
 
@@ -39,6 +34,7 @@ async function main(url) {
   await browser.close();
 }
 
+// Automatically scroll the puppeteer instance until the end of the page
 async function autoScroll(page) {
   await page.evaluate(async () => {
     await new Promise((resolve, reject) => {
@@ -46,14 +42,18 @@ async function autoScroll(page) {
       var distance = 100;
       var timer = setInterval(() => {
         var scrollHeight = document.body.scrollHeight;
+        // Scroll 100 px
         window.scrollBy(0, distance);
         totalHeight += distance;
+        // Check if we are at the end of the page
+        const isLoadingComplete = $("div.has-more-items").length === 0;
 
-        if (totalHeight >= scrollHeight) {
+        if (isLoadingComplete && totalHeight >= scrollHeight) {
+          // Stop scrolling
           clearInterval(timer);
           resolve();
         }
-      }, 50);
+      }, 1);
     });
   });
 }
@@ -61,7 +61,7 @@ async function autoScroll(page) {
 async function parseContent(html) {
   // get a list of links
   urls = getImageLinks(html);
-  console.log(`Number of pictures: ${urls.length}`);
+  console.log(`Number of images: ${urls.length}`);
   if (urls.length) {
     // check if "images" directory exists
     fs.access("./images", fs.constants.F_OK, error => {
@@ -69,16 +69,11 @@ async function parseContent(html) {
         // does not exist, so we create it
         fs.mkdir("./images", error => {
           if (error) throw error;
-          console.log("created dir");
-          urls.forEach(url => {
-            downloadPicture(url);
-          });
+          downloadPictures(urls);
         });
       } else {
         // already exists
-        urls.forEach(url => {
-          downloadPicture(url);
-        });
+        downloadPictures(urls);
       }
     });
   }
@@ -100,6 +95,15 @@ const getImageLinks = html => {
   return urls;
 };
 
+downloadPictures = urls => {
+  const length = urls.length;
+  urls.forEach((url, i) => {
+    console.log(`Downloading ${i + 1}/${length}...`);
+    downloadPicture(url);
+  });
+  console.log("All done!");
+};
+
 // download a picture from a link
 async function downloadPicture(url) {
   const options = {
@@ -114,6 +118,5 @@ async function downloadPicture(url) {
   // write the image
   fs.writeFile(`images/${basename}`, img, error => {
     if (error) throw error;
-    console.log(`Picture ${basename} saved!`);
   });
 }
