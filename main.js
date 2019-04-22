@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 // scrapping
-const rp = require("request-promise");
+const axios = require("axios");
 const $ = require("cheerio");
 const puppeteer = require("puppeteer");
 //others
@@ -130,17 +130,23 @@ async function downloadPictures(urls) {
 
 // download a picture from a link
 async function downloadPicture(url) {
-  const options = {
+  // Image stream
+  const img = await axios({
+    method: "get",
     url,
-    encoding: null,
-  };
+    responseType: "stream",
+  });
 
-  const img = await rp(options);
-
-  // extract file name
   const basename = path.basename(url);
-  // write the image
-  fs.writeFile(`${username}/${basename}`, img, error => {
-    if (error) throw error;
+
+  // This opens up the writeable stream at the specified path
+  const writeStream = fs.createWriteStream(`${username}/${basename}`);
+
+  // This pipes the image data to the file
+  img.data.pipe(writeStream);
+
+  // This is here incase any errors occur
+  writeStream.on("error", err => {
+    console.log(err);
   });
 }
