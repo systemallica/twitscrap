@@ -72,6 +72,7 @@ async function autoScroll(page) {
 async function parseContent(html) {
   // get a list of links
   urls = getImageLinks(html);
+  urls2 = getVideoLinks(html);
   urlsLength = urls.length;
   // start the progress bar with a total value of 200 and start value of 0
   bar1.start(urlsLength, 0);
@@ -93,7 +94,7 @@ async function parseContent(html) {
   }
 }
 
-// get a list of links
+// get a list of image links
 const getImageLinks = html => {
   const parsedHtml = $(".AdaptiveMedia-photoContainer > img", html);
   const urls = [];
@@ -106,6 +107,24 @@ const getImageLinks = html => {
     }
   }
 
+  return urls;
+};
+
+// get a list of video links
+const getVideoLinks = html => {
+  const parsedHtml = $(
+    "div.AdaptiveMediaOuterContainer > div > div > div > div > div > div > div > div > div > div:nth-child(1) > div > video",
+    html
+  );
+  const urls = [];
+
+  // Create an array of the img links
+  for (let i = 0; i < parsedHtml.length; i++) {
+    const url = parsedHtml[i].attribs.src;
+    if (url) {
+      urls.push(url);
+    }
+  }
   return urls;
 };
 
