@@ -71,24 +71,25 @@ async function autoScroll(page) {
 
 async function parseContent(html) {
   // get a list of links
-  urls = getImageLinks(html);
-  urls2 = getVideoLinks(html);
-  urlsLength = urls.length;
-  // start the progress bar with a total value of 200 and start value of 0
+  const imgUrls = getImageLinks(html);
+  const videoUrls = getVideoLinks(html);
+  const urls = [...imgUrls, ...videoUrls];
+  const urlsLength = imgUrls.length + videoUrls.length;
+  // start the progress bar
   bar1.start(urlsLength, 0);
 
   if (urlsLength) {
-    // check if "images" directory exists
+    // check if "username" directory exists
     fs.access(`./${username}`, fs.constants.F_OK, async error => {
       if (error) {
         // does not exist, so we create it
         fs.mkdir(`./${username}`, async error => {
           if (error) throw error;
-          await downloadPictures(urls);
+          await downloadMedias(urls);
         });
       } else {
         // already exists
-        await downloadPictures(urls);
+        await downloadMedias(urls);
       }
     });
   }
@@ -112,10 +113,7 @@ const getImageLinks = html => {
 
 // get a list of video links
 const getVideoLinks = html => {
-  const parsedHtml = $(
-    "div.AdaptiveMediaOuterContainer > div > div > div > div > div > div > div > div > div > div:nth-child(1) > div > video",
-    html
-  );
+  const parsedHtml = $("video", html);
   const urls = [];
 
   // Create an array of the img links
@@ -128,10 +126,10 @@ const getVideoLinks = html => {
   return urls;
 };
 
-async function downloadPictures(urls) {
+async function downloadMedias(urls) {
   for (let i = 0; i < urls.length; i++) {
     // update the current value in your application..
-    await downloadPicture(urls[i]);
+    await downloadMedia(urls[i]);
     bar1.update(i + 1);
   }
   // stop the progress bar
@@ -148,9 +146,9 @@ async function downloadPictures(urls) {
 }
 
 // download a picture from a link
-async function downloadPicture(url) {
-  // Image stream
-  const img = await axios({
+async function downloadMedia(url) {
+  // Media stream
+  const media = await axios({
     method: "get",
     url,
     responseType: "stream",
@@ -161,8 +159,8 @@ async function downloadPicture(url) {
   // This opens up the writeable stream at the specified path
   const writeStream = fs.createWriteStream(`${username}/${basename}`);
 
-  // This pipes the image data to the file
-  img.data.pipe(writeStream);
+  // This pipes the media data to the file
+  media.data.pipe(writeStream);
 
   // This is here incase any errors occur
   writeStream.on("error", err => {
