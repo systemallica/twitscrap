@@ -10,10 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
-    "cli-progress": "^2.1.1",
-    "inquirer": "^6.3.1",
-    "puppeteer": "^1.14.0"
+    "cli-progress": "^3.6.0",
+    "inquirer": "^7.1.0",
+    "puppeteer": "^2.1.1"
   }
 }
