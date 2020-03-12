@@ -1,16 +1,16 @@
 // nodejs
-import { access, constants, mkdir, createWriteStream } from "fs";
-import { basename as _basename } from "path";
+const fs = require("fs");
+const path = require("path");
 // scrapping
-import axios from "axios";
-import $ from "cheerio";
-import { launch } from "puppeteer";
+const axios = require("axios");
+const $ = require("cheerio");
+const puppeteer = require("puppeteer");
 //others
-import { prompt } from "inquirer";
-import { Bar, Presets } from "cli-progress";
+const inquirer = require("inquirer");
+const cliProgress = require("cli-progress");
 
 // create a new progress bar instance and use shades_classic theme
-const bar1 = new Bar({}, Presets.shades_classic);
+const bar1 = new cliProgress.Bar({}, cliProgress.Presets.shades_classic);
 
 let username;
 let startTime;
@@ -23,7 +23,7 @@ const questions = [
   },
 ];
 
-prompt(questions).then(answers => {
+inquirer.prompt(questions).then(answers => {
   username = answers["username"];
   const url = `https://twitter.com/${username}/media`;
   main(url);
@@ -32,7 +32,7 @@ prompt(questions).then(answers => {
 async function main(url) {
   console.log("Fetching images...");
   console.log("This may take a couple of minutes...");
-  const browser = await launch();
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url);
 
@@ -80,10 +80,10 @@ async function parseContent(html) {
 
   if (urlsLength) {
     // check if "username" directory exists
-    access(`./${username}`, constants.F_OK, async error => {
+    fs.access(`./${username}`, fs.constants.F_OK, async error => {
       if (error) {
         // does not exist, so we create it
-        mkdir(`./${username}`, async error => {
+        fs.mkdir(`./${username}`, async error => {
           if (error) throw error;
           await downloadMedias(urls);
         });
@@ -154,10 +154,10 @@ async function downloadMedia(url) {
     responseType: "stream",
   });
 
-  const basename = _basename(url);
+  const basename = path.basename(url);
 
   // This opens up the writeable stream at the specified path
-  const writeStream = createWriteStream(`${username}/${basename}`);
+  const writeStream = fs.createWriteStream(`${username}/${basename}`);
 
   // This pipes the media data to the file
   media.data.pipe(writeStream);
